@@ -1,0 +1,111 @@
+<tool id="skesa" name="skesa" version="0.1">
+    <requirements>
+      	<requirement type="package" version="2.2">skesa</requirement>
+	<requirement type="package" >python</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    
+
+      #if $jobtype.select != "cl"
+	skesa
+       #if $jobtype.select == "asm"
+        --fasta $draft
+       #else if $jobtype.select == "se"
+        --fastq $fastq1
+       #else if $jobtype.select == "pe"
+	--fastq $fastq1,$fastq2 --use_paired_ends
+       #else if $jobtype.select == "rp"
+	--fastq $jobtype.pairedf.forward,$jobtype.pairedf.reverse --use_paired_ends
+       #if $cores != 0
+        --cores $cores
+       #end if
+        --memory $memory > results.skesa.fasta
+      #end if
+
+
+      #if $jobtype.select == "cl"
+	
+	#set $pathOuput = 0
+	mkdir temp_data;
+        #for $collection_file in $jobtype.collection_files
+             	#silent sys.stderr.write($collection_file+"\n")
+	 	cp $collection_file temp_data/.;
+	     
+        #end for
+	
+
+      #end if
+
+    ]]></command>
+    <inputs>
+      <conditional name="jobtype">
+        <param name="select" type="select" label="Assembly or FASTQ Reads?">
+          <option value="asm">Genome Assembly</option>
+          <option value="se">Single-End Reads</option>
+          <option value="pe">Paired-End Reads (Separate Files)</option>
+          <option value="rp">Paired-End Reads (Paired Data Set)</option>
+          <option value="cl">Collection of Reads</option>
+        </param>
+        <when value="srr">
+          <param name="srrnum" type="text" label="Sra run number"/>
+        </when>
+        <when value="asm">
+          <param name="draft" type="data" format="fasta" label="FASTA" />
+        </when>
+        <when value="se">
+          <param name="fastq1" type="data" format="fastq" label="FASTQ" />
+        </when>
+        <when value="pe">
+          <param name="fastq1" type="data" format="fastq" label="FASTQ" />
+          <param name="fastq2" type="data" format="fastq" label="FASTQ" />
+        </when>
+        <when value="cl">
+          <param name="collection_files" type="data_collection" format="fastq,fastqsanger,fastq.gz,fastqsanger.gz,fastq.bz2,fastqsanger.bz2" collection_type="paired" label="FASTQS: Must be a Data Set list built from multiple fastq files" />
+        </when>
+        <when value="rp">
+          <param name="pairedf" type="data_collection" collection_type="paired" format="fastq" label="FASTQS: Must be a paired set of forward and reverse fastq files" />
+        </when>
+      </conditional>
+      <param name="memory" type="integer" label="Memory available (GB) [integer]" value="16" />
+      <param name="cores" type="integer" label="Number of cores to use (default all) [integer]" value="0" />
+    
+    </inputs>
+    <outputs>
+            <data format="fasta" label="skesa Results" name="${input.name}.skesa.fasta" from_work_dir="*.fasta"/>
+    </outputs>
+
+    <help><![CDATA[
+    
+**Usage: skesa**
+
+**INPUT**
+
+A fasta assembly or single or paired end reads test or data set list of fastqs
+
+**Memory available**
+
+--memory arg (=32)         Memory available (GB) [integer]
+     
+
+**Number of cores**
+
+--cores arg (=0)           Number of cores to use (default all) [integer]
+
+https://github.com/ncbi/ngs-tools/tree/master/tools/skesa/
+
+    ]]></help>
+     <citations>
+        <citation type="bibtex">
+        @misc{pope_dashnow_zobel_holt_raven_schultz_inouye_tomita_2014,
+        title={skesa: eSKESA is a de-novo sequence read assembler for cultured single isolate genomes
+    based on DeBruijn graphs. It uses conservative heuristics and is designed to
+    create breaks at repeat regions in the genome. This leads to excellent sequence
+    quality but not necessarily a large N50 statistic. It is a multi-threaded
+    application that scales well with the number of processors. For different runs
+    with the same inputs, including the order of reads, the order and orientation
+    of contigs in the output is deterministic. },
+        url={https://github.com/ncbi/ngs-tools/tree/master/tools/skesa/},
+        author={National Center for Biotechnology Information },
+       }</citation>
+    </citations>
+</tool>
